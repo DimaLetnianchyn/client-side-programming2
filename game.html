@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coin Collector</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+        #topScores {
+            list-style-type: none;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="scoreboard">
+        <h2>Score: <span id="score">0</span></h2>
+        <h2>Top 3 Scores:</h2>
+        <ol id="topScores">
+            <!-- Top 3 scores will be displayed here -->
+        </ol>
+    </div>
+
+    <script>
+        let scores = [];
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let score = 0;
+        let character = {
+            x: 50,
+            y: canvas.height / 2,
+            size: 20,
+            speed: 5
+        };
+        let coins = [];
+        let bombs = [];
+        let gameLoop;
+
+        function updateScoreboard() {
+            const topScoresList = document.getElementById('topScores');
+            topScoresList.innerHTML = ''; // Clear previous top scores
+            scores.slice(0, 3).forEach(function(score, index) {
+                const listItem = document.createElement('li');
+                listItem.textContent = `#${index + 1}: ${score}`;
+                topScoresList.appendChild(listItem);
+            });
+        }
+
+        function drawCharacter() {
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(character.x, character.y, character.size, character.size);
+        }
+
+        function drawCoins() {
+            ctx.fillStyle = 'yellow';
+            coins.forEach(function (coin) {
+                ctx.beginPath();
+                ctx.arc(coin.x, coin.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+
+        function drawBombs() {
+            ctx.fillStyle = 'red';
+            bombs.forEach(function (bomb) {
+                ctx.beginPath();
+                ctx.arc(bomb.x, bomb.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+
+        function drawScore() {
+            document.getElementById('score').textContent = score;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawCharacter();
+            drawCoins();
+            drawBombs();
+            drawScore();
+
+            // Move character
+            if (keys.ArrowUp && character.y > 0) {
+                character.y -= character.speed;
+            }
+            if (keys.ArrowDown && character.y < canvas.height - character.size) {
+                character.y += character.speed;
+            }
+
+            // Move coins
+            coins.forEach(function (coin, index) {
+                coin.x -= 2;
+                if (coin.x < 0) {
+                    coins.splice(index, 1);
+                }
+                // Check collision with character
+                if (
+                    coin.x < character.x + character.size &&
+                    coin.x + 10 > character.x &&
+                    coin.y < character.y + character.size &&
+                    coin.y + 10 > character.y
+                ) {
+                    score++;
+                    coins.splice(index, 1);
+                }
+            });
+
+            // Move bombs
+            bombs.forEach(function (bomb, index) {
+                bomb.x -= 2;
+                if (bomb.x < 0) {
+                    bombs.splice(index, 1);
+                }
+                // Check collision with character
+                if (
+                    bomb.x < character.x + character.size &&
+                    bomb.x + 10 > character.x &&
+                    bomb.y < character.y + character.size &&
+                    bomb.y + 10 > character.y
+                ) {
+                    endGame();
+                }
+            });
+
+            requestAnimationFrame(draw);
+        }
+
+        function generateCoins() {
+            const coinY = Math.random() * canvas.height;
+            coins.push({ x: canvas.width, y: coinY });
+        }
+
+        function generateBombs() {
+            const bombY = Math.random() * canvas.height;
+            bombs.push({ x: canvas.width, y: bombY });
+        }
+
+        function startGame() {
+            score = 0;
+            character.y = canvas.height / 2;
+            coins = [];
+            bombs = [];
+            gameLoop = setInterval(function () {
+                generateCoins();
+                generateBombs();
+            }, 2000);
+            draw();
+        }
+
+        function endGame() {
+            clearInterval(gameLoop);
+            alert('Game Over! Your score: ' + score);
+            scores.push(score);
+            scores.sort((a, b) => b - a);
+            updateScoreboard();
+            startGame();
+        }
+
+        // Keyboard controls
+        const keys = {};
+        window.addEventListener('keydown', function (e) {
+            keys[e.key] = true;
+        });
+        window.addEventListener('keyup', function (e) {
+            delete keys[e.key];
+        });
+
+        // Start game initially
+        startGame();
+    </script>
+</body>
+</html>
